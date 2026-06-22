@@ -140,6 +140,22 @@
   color: #f8f2ea;
 }
 
+.result-card .section-kicker,
+.result-card .result-section p {
+  color: #ff9f62;
+}
+
+.result-card .result-section span,
+.result-card .cta-panel span,
+.result-card .cta-panel small {
+  color: #eaded2;
+}
+
+.result-card .cta-panel {
+  border-color: rgba(255, 196, 150, 0.34);
+  background: rgba(255, 218, 184, 0.14);
+}
+
 .hero-card ul,
 .positioning-card ul,
 .result-section ul {

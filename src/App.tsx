@@ -194,9 +194,30 @@ function progressCount(answers: Answers) {
   return [answers.workflow, answers.systems, answers.environment].filter(Boolean).length;
 }
 
+function buildBriefingMailto(answers: Answers, result: OpportunityResult) {
+  const subject = `AI Ops Map teardown request: ${result.title}`;
+  const body = [
+    "I'd like to review this automation opportunity.",
+    "",
+    `Suggested first engagement: ${result.title}`,
+    `Why it fits: ${result.summary}`,
+    `Pilot shape: ${result.pilot}`,
+    `Likely stack: ${result.stack.join(", ")}`,
+    `Controls to keep: ${result.controls.join(", ")}`,
+    `Expected payoff: ${result.value}`,
+    answers.workflow ? `Workflow area: ${answers.workflow}` : undefined,
+    answers.systems ? `Systems state: ${answers.systems}` : undefined,
+    answers.environment ? `Deployment preference: ${answers.environment}` : undefined,
+    answers.email ? `Contact email: ${answers.email}` : undefined,
+  ].filter(Boolean);
+
+  return `mailto:contact@webrtc.ventures?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body.join("\n"))}`;
+}
+
 function App() {
   const [answers, setAnswers] = useState<Answers>({ email: "" });
   const result = useMemo(() => buildResult(answers), [answers]);
+  const briefingMailto = useMemo(() => buildBriefingMailto(answers, result), [answers, result]);
   const progress = progressCount(answers);
 
   return (
@@ -215,7 +236,7 @@ function App() {
             <a href="#opportunity-map" className="primary-link">
               Find low-hanging automation wins
             </a>
-            <a href="https://webrtc.ventures" target="_blank" rel="noreferrer" className="secondary-link">
+            <a href="https://webrtc.ventures/contact/" target="_blank" rel="noreferrer" className="secondary-link">
               Talk to an automation expert
             </a>
           </div>
@@ -393,7 +414,7 @@ function App() {
                 We review the workflow, spot the obvious automation leverage, and tell you whether it belongs in OpenClaw, Hermes,
                 n8n, LangGraph, or a mixed stack.
               </span>
-              <a href="https://webrtc.ventures" target="_blank" rel="noreferrer">
+              <a href={briefingMailto}>
                 Book the conversation
               </a>
               {answers.email ? <small>Follow-up contact noted: {answers.email}</small> : null}

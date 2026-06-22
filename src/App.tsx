@@ -236,7 +236,7 @@ function App() {
             <a href="#opportunity-map" className="primary-link">
               Find low-hanging automation wins
             </a>
-            <a href="https://webrtc.ventures" target="_blank" rel="noreferrer" className="secondary-link">
+            <a href="https://webrtc.ventures/contact/" target="_blank" rel="noreferrer" className="secondary-link">
               Talk to an automation expert
             </a>
           </div>

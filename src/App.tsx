@@ -6,7 +6,10 @@ import {
   buildBriefingUrl,
   buildResult,
   environmentChoices,
+  feasibilityChoices,
+  impactChoices,
   progressCount,
+  riskChoices,
   systemsChoices,
   workflowChoices,
 } from "./recommendations";
@@ -111,10 +114,10 @@ function App() {
       <section className="diagnostic-section" id="opportunity-map">
         <div className="diagnostic-copy">
           <p className="section-kicker">Progressive diagnostic</p>
-          <h2>Answer three questions and get a practical first workflow blueprint.</h2>
+          <h2>Answer six questions and get a practical first workflow blueprint.</h2>
           <p>
-            The recommendation updates as you answer, so the conversation starts with workflow shape, risk controls, and
-            deployment assumptions instead of a blank discovery call.
+            The recommendation updates as you qualify impact, feasibility, control risk, and deployment assumptions, so the
+            conversation starts with a usable blueprint instead of a blank discovery call.
           </p>
         </div>
 
@@ -125,8 +128,8 @@ function App() {
                 <p className="section-kicker">Opportunity map</p>
                 <h3>What should we automate first?</h3>
               </div>
-              <span className="progress-pill" aria-label={`${progress} of 3 diagnostic questions answered`}>
-                {progress}/3 mapped
+              <span className="progress-pill" aria-label={`${progress} of 6 diagnostic questions answered`}>
+                {progress}/6 mapped
               </span>
             </div>
 
@@ -138,10 +141,31 @@ function App() {
             />
 
             <QuestionBlock
-              title="How connected are the surrounding systems?"
+              title="How large is the business impact?"
+              choices={impactChoices}
+              value={answers.impact}
+              onSelect={(impact) => setAnswers((current) => ({ ...current, impact }))}
+            />
+
+            <QuestionBlock
+              title="Which systems would be involved?"
               choices={systemsChoices}
               value={answers.systems}
               onSelect={(systems) => setAnswers((current) => ({ ...current, systems }))}
+            />
+
+            <QuestionBlock
+              title="How ready is the workflow to automate?"
+              choices={feasibilityChoices}
+              value={answers.feasibility}
+              onSelect={(feasibility) => setAnswers((current) => ({ ...current, feasibility }))}
+            />
+
+            <QuestionBlock
+              title="How much control does it need?"
+              choices={riskChoices}
+              value={answers.risk}
+              onSelect={(risk) => setAnswers((current) => ({ ...current, risk }))}
             />
 
             <QuestionBlock
@@ -164,18 +188,29 @@ function App() {
           </div>
 
           <aside className="result-card" aria-label="automation opportunity result">
-            <p className="section-kicker">Suggested first engagement</p>
+            <p className="section-kicker">Workflow blueprint</p>
             <h3>{result.title}</h3>
-            <ResultSection title="Why this is the low-hanging win" body={result.summary} />
-            <ResultSection title="Pilot shape" body={result.pilot} />
-            <ListSection title="Likely stack" items={result.stack} />
-            <ListSection title="Controls to keep" items={result.controls} />
-            <ResultSection title="Expected payoff" body={result.value} />
+            <ResultSection title="Recommended first workflow" body={result.recommendedWorkflow} />
+            <ResultSection title="Why it fits" body={result.whyFits} />
+
+            <div className="level-grid" aria-label="blueprint qualification levels">
+              <LevelPill label="Impact" value={result.impactLevel} />
+              <LevelPill label="Feasibility" value={result.feasibilityLevel} />
+              <LevelPill label="Control risk" value={result.controlRiskLevel} />
+            </div>
+
+            <ListSection title="Systems involved" items={result.systems} />
+            <ListSection title="Likely integrations" items={result.integrations} />
+            <ListSection title="Approval points" items={result.approvalPoints} />
+            <ResultSection title="Pilot boundary" body={result.pilotBoundary} />
+            <ResultSection title="Success metric" body={result.successMetric} />
+            <ListSection title="What WebRTC.ventures handles" items={result.handles} />
+            <ListSection title="What the customer provides" items={result.customerProvides} />
 
             <div className="cta-panel">
               <strong>20-minute automation teardown</strong>
               <span>
-                WebRTC.ventures can review the workflow, spot the obvious automation leverage, and advise whether it belongs
+                WebRTC.ventures can review the blueprint, pressure-test the approval points, and advise whether it belongs
                 in OpenClaw, Hermes, n8n, LangGraph, a contact-center integration, or a mixed stack.
               </span>
               <a href={briefingUrl} target="_blank" rel="noreferrer">
@@ -219,6 +254,15 @@ function QuestionBlock<T extends string>({
         ))}
       </div>
     </section>
+  );
+}
+
+function LevelPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="level-pill">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
   );
 }
 

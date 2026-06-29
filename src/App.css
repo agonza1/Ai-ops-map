@@ -26,9 +26,9 @@
 .world-card,
 .diagnostic-card,
 .result-card {
-  border-radius: 30px;
+  border-radius: 8px;
   border: 1px solid var(--line);
-  background: rgba(249, 244, 235, 0.92);
+  background: rgba(255, 255, 255, 0.94);
   box-shadow: 0 24px 60px rgba(30, 27, 22, 0.08);
 }
 
@@ -80,7 +80,7 @@
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  border-radius: 999px;
+  border-radius: 8px;
   padding: 14px 20px;
   font-weight: 800;
 }
@@ -111,49 +111,58 @@
 .cta-panel span,
 .cta-panel small,
 .hero-card li,
-.mini-proof span {
+.mini-proof span,
+.level-pill span {
   color: var(--muted);
   line-height: 1.55;
 }
 
 .assurance-strip span,
 .logo-band span {
-  border-radius: 18px;
-  border: 1px solid rgba(38, 40, 46, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(38, 40, 46, 0.1);
   background: rgba(255, 255, 255, 0.55);
   padding: 14px 16px;
 }
 
-.hero-card,
-.result-card {
+.hero-card {
   padding: 28px;
   background: linear-gradient(180deg, rgba(34, 45, 50, 0.98) 0%, rgba(20, 28, 31, 0.98) 100%);
 }
 
+.result-card {
+  padding: 28px;
+  background: #ffffff;
+}
+
 .hero-card h2,
 .hero-card strong,
-.hero-card li,
+.hero-card li {
+  color: #f8f2ea;
+}
+
 .result-card h3,
 .result-card strong,
 .result-card li,
-.result-card small {
-  color: #f8f2ea;
+.result-card small,
+.level-pill strong {
+  color: var(--text);
 }
 
 .result-card .section-kicker,
 .result-card .result-section p {
-  color: #ff9f62;
+  color: #1f6f76;
 }
 
 .result-card .result-section span,
 .result-card .cta-panel span,
 .result-card .cta-panel small {
-  color: #eaded2;
+  color: #4d5b62;
 }
 
 .result-card .cta-panel {
-  border-color: rgba(255, 196, 150, 0.34);
-  background: rgba(255, 218, 184, 0.14);
+  border-color: rgba(31, 111, 118, 0.22);
+  background: #eef8f7;
 }
 
 .hero-card ul,
@@ -166,7 +175,7 @@
 .mini-proof,
 .cta-panel {
   margin-top: 20px;
-  border-radius: 22px;
+  border-radius: 8px;
   padding: 18px;
   border: 1px solid rgba(255, 180, 126, 0.18);
   background: rgba(255, 194, 146, 0.08);
@@ -329,11 +338,38 @@
   margin-top: 12px;
 }
 
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.level-pill {
+  border: 1px solid rgba(31, 111, 118, 0.18);
+  border-radius: 8px;
+  background: #f7fbfa;
+  padding: 12px;
+}
+
+.level-pill span,
+.level-pill strong {
+  display: block;
+}
+
+.level-pill span {
+  font-size: 0.78rem;
+}
+
+.level-pill strong {
+  margin-top: 4px;
+}
+
 .choice-card {
   text-align: left;
   border: 1px solid var(--line);
   background: white;
-  border-radius: 20px;
+  border-radius: 8px;
   padding: 16px;
   cursor: pointer;
   transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
@@ -380,6 +416,7 @@
 }
 
 .result-section + .result-section,
+.level-grid + .result-section,
 .cta-panel {
   margin-top: 18px;
 }
@@ -424,7 +461,7 @@
   .diagnostic-card,
   .result-card {
     padding: 22px;
-    border-radius: 24px;
+    border-radius: 8px;
   }
 
   .world-map {
@@ -433,5 +470,64 @@
 
   .diagnostic-head {
     flex-direction: column;
+  }
+}
+
+
+.hero-copy {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(238, 248, 247, 0.92) 100%);
+}
+
+.hero-copy h1 {
+  max-width: 11ch;
+}
+
+.service-card,
+.positioning-card,
+.diagnostic-card,
+.result-card {
+  box-shadow: 0 18px 45px rgba(26, 45, 52, 0.08);
+}
+
+.result-section span,
+.result-section li {
+  font-size: 0.98rem;
+}
+
+.result-section ul {
+  margin-top: 8px;
+}
+
+.result-section p {
+  letter-spacing: 0.08em;
+}
+
+.cta-panel a {
+  width: fit-content;
+}
+
+.checklist-card {
+  background: #f6f3ec;
+}
+
+.spotlight-card {
+  background: #eef8f7;
+}
+
+@media (max-width: 1080px) {
+  .hero-copy h1 {
+    max-width: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .hero-copy h1 {
+    font-size: 3rem;
+    max-width: none;
+  }
+
+  .level-grid {
+    grid-template-columns: 1fr;
   }
 }

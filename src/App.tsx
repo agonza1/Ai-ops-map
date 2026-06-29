@@ -208,7 +208,7 @@ function App() {
             <ListSection title="What the customer provides" items={result.customerProvides} />
 
             <div className="cta-panel">
-              <strong>20-minute automation teardown</strong>
+              <strong>30-minute automation teardown</strong>
               <span>
                 WebRTC.ventures can review the blueprint, pressure-test the approval points, and advise whether it belongs
                 in OpenClaw, Hermes, n8n, LangGraph, a contact-center integration, or a mixed stack.
@@ -216,7 +216,12 @@ function App() {
               <a href={briefingUrl} target="_blank" rel="noreferrer">
                 Contact WebRTC.ventures
               </a>
-              {answers.email ? <small>Follow-up contact noted: {answers.email}</small> : null}
+              {answers.email ? (
+                <div className="follow-up-contact">
+                  <small>Follow-up contact noted</small>
+                  <code>{answers.email.trim()}</code>
+                </div>
+              ) : null}
             </div>
           </aside>
         </div>

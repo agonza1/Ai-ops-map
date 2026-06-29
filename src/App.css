@@ -111,7 +111,8 @@
 .cta-panel span,
 .cta-panel small,
 .hero-card li,
-.mini-proof span {
+.mini-proof span,
+.level-pill span {
   color: var(--muted);
   line-height: 1.55;
 }
@@ -143,7 +144,8 @@
 .result-card h3,
 .result-card strong,
 .result-card li,
-.result-card small {
+.result-card small,
+.level-pill strong {
   color: var(--text);
 }
 
@@ -336,6 +338,33 @@
   margin-top: 12px;
 }
 
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.level-pill {
+  border: 1px solid rgba(31, 111, 118, 0.18);
+  border-radius: 8px;
+  background: #f7fbfa;
+  padding: 12px;
+}
+
+.level-pill span,
+.level-pill strong {
+  display: block;
+}
+
+.level-pill span {
+  font-size: 0.78rem;
+}
+
+.level-pill strong {
+  margin-top: 4px;
+}
+
 .choice-card {
   text-align: left;
   border: 1px solid var(--line);
@@ -387,6 +416,7 @@
 }
 
 .result-section + .result-section,
+.level-grid + .result-section,
 .cta-panel {
   margin-top: 18px;
 }
@@ -465,6 +495,10 @@
   font-size: 0.98rem;
 }
 
+.result-section ul {
+  margin-top: 8px;
+}
+
 .result-section p {
   letter-spacing: 0.08em;
 }
@@ -491,5 +525,9 @@
   .hero-copy h1 {
     font-size: 3rem;
     max-width: none;
+  }
+
+  .level-grid {
+    grid-template-columns: 1fr;
   }
 }

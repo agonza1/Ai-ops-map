@@ -116,7 +116,7 @@ function App() {
           <p className="section-kicker">Progressive diagnostic</p>
           <h2>Answer six questions and get a practical first workflow blueprint.</h2>
           <p>
-            The recommendation updates as you qualify impact, feasibility, control risk, and deployment assumptions, so the
+            The recommendation updates as you qualify impact, readiness, control risk, and deployment assumptions, so the
             conversation starts with a usable blueprint instead of a blank discovery call.
           </p>
         </div>
@@ -195,7 +195,7 @@ function App() {
 
             <div className="level-grid" aria-label="blueprint qualification levels">
               <LevelPill label="Impact" value={result.impactLevel} />
-              <LevelPill label="Feasibility" value={result.feasibilityLevel} />
+              <LevelPill label="Pilot readiness" value={readinessLabel(result.feasibilityLevel)} />
               <LevelPill label="Control risk" value={result.controlRiskLevel} />
             </div>
 
@@ -228,6 +228,12 @@ function App() {
       </section>
     </main>
   );
+}
+
+function readinessLabel(value: string) {
+  if (value === "High") return "Build-ready";
+  if (value === "Medium") return "Pilotable";
+  return "Discovery needed";
 }
 
 function QuestionBlock<T extends string>({

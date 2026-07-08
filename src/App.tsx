@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type RefObject } from "react";
 import "./App.css";
 import {
   type Answers,
   type Choice,
-  buildBriefingUrl,
   buildResult,
   environmentChoices,
   feasibilityChoices,
@@ -13,8 +12,23 @@ import {
   systemsChoices,
   workflowChoices,
 } from "./recommendations";
+import {
+  type LeadPayload,
+  type LeadValidationErrors,
+  buildLeadPayload,
+  consentText,
+  getAttribution,
+  getLeadCaptureConfig,
+  hasLeadValidationErrors,
+  isMeetingBookedMessage,
+  schedulerUrl,
+  submitLeadCapture,
+  trackFunnelEvent,
+  validateLeadFields,
+} from "./leadCapture";
 
 type QuestionId = "workflow" | "impact" | "systems" | "feasibility" | "risk" | "environment";
+type LeadStatus = "idle" | "submitting" | "success" | "error";
 
 type DiagnosticQuestion<T extends string> = {
   id: QuestionId;
@@ -75,24 +89,138 @@ const starterKitSignals = [
   "The output is packaged for a 30-minute teardown with WebRTC.ventures, not a self-serve audit report.",
 ];
 
+const initialAnswers: Answers = {
+  email: "",
+  name: "",
+  company: "",
+  consent: false,
+};
+
+const captureConfig = getLeadCaptureConfig();
+
 function App() {
-  const [answers, setAnswers] = useState<Answers>({ email: "" });
+  const [answers, setAnswers] = useState<Answers>(initialAnswers);
   const [step, setStep] = useState(0);
+  const [leadStatus, setLeadStatus] = useState<LeadStatus>("idle");
+  const [leadErrors, setLeadErrors] = useState<LeadValidationErrors>({});
+  const [submissionError, setSubmissionError] = useState("");
+  const [submittedPayload, setSubmittedPayload] = useState<LeadPayload | null>(null);
   const legendRef = useRef<HTMLLegendElement>(null);
+  const startedRef = useRef(false);
+  const completedStepsRef = useRef(new Set<QuestionId>());
+  const partialViewedRef = useRef(false);
+  const completedRef = useRef(false);
+  const schedulerOpenedRef = useRef(false);
+  const meetingBookedRef = useRef(false);
+  const attribution = useMemo(() => getAttribution(), []);
   const result = useMemo(() => buildResult(answers), [answers]);
-  const briefingUrl = useMemo(() => buildBriefingUrl(answers, result), [answers, result]);
   const progress = progressCount(answers);
   const currentQuestion = questions[step];
   const isCurrentAnswered = Boolean(answers[currentQuestion.id]);
   const canShowEarlySignal = progress >= 2;
   const canShowFullResult = progress === questions.length;
+  const scheduledUrl = useMemo(() => schedulerUrl(captureConfig.schedulerUrl, submittedPayload, attribution), [attribution, submittedPayload]);
 
   useEffect(() => {
     legendRef.current?.focus();
   }, [step]);
 
+  useEffect(() => {
+    if (canShowEarlySignal && !canShowFullResult && !partialViewedRef.current) {
+      partialViewedRef.current = true;
+      trackFunnelEvent("partial_result_viewed", { progress, recommendation: result.title }, captureConfig.analyticsEndpoint);
+    }
+
+    if (canShowFullResult && !completedRef.current) {
+      completedRef.current = true;
+      trackFunnelEvent("assessment_completed", { recommendation: result.title, answers: diagnosticEventAnswers(answers) }, captureConfig.analyticsEndpoint);
+    }
+  }, [answers, canShowEarlySignal, canShowFullResult, progress, result.title]);
+
+  useEffect(() => {
+    function onMessage(message: MessageEvent) {
+      if (submittedPayload && !meetingBookedRef.current && isMeetingBookedMessage(message)) {
+        meetingBookedRef.current = true;
+        trackFunnelEvent(
+          "meeting_booked",
+          { submissionId: submittedPayload.submissionId, schedulerUrl: scheduledUrl },
+          captureConfig.analyticsEndpoint,
+        );
+      }
+    }
+
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [scheduledUrl, submittedPayload]);
+
   function updateAnswer(id: QuestionId, value: string) {
     setAnswers((current) => ({ ...current, [id]: value }));
+
+    if (!startedRef.current) {
+      startedRef.current = true;
+      trackFunnelEvent("assessment_started", { question: id }, captureConfig.analyticsEndpoint);
+    }
+
+    if (!completedStepsRef.current.has(id)) {
+      completedStepsRef.current.add(id);
+      trackFunnelEvent(
+        "assessment_step_completed",
+        { question: id, answer: value, step: questions.findIndex((question) => question.id === id) + 1 },
+        captureConfig.analyticsEndpoint,
+      );
+    }
+  }
+
+  function updateLeadField(field: "name" | "email" | "company" | "consent", value: string | boolean) {
+    setAnswers((current) => ({ ...current, [field]: value }));
+    setLeadStatus("idle");
+    setSubmissionError("");
+    setLeadErrors((current) => ({ ...current, [field]: undefined }));
+  }
+
+  function markSchedulerOpened(trigger: "link" | "embed") {
+    if (schedulerOpenedRef.current || !submittedPayload) return;
+
+    schedulerOpenedRef.current = true;
+    trackFunnelEvent(
+      "scheduler_opened",
+      { trigger, submissionId: submittedPayload.submissionId, schedulerUrl: scheduledUrl },
+      captureConfig.analyticsEndpoint,
+    );
+  }
+
+  async function handleLeadSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const errors = validateLeadFields(answers);
+    setLeadErrors(errors);
+    setSubmissionError("");
+
+    if (hasLeadValidationErrors(errors)) {
+      setLeadStatus("error");
+      return;
+    }
+
+    const payload = buildLeadPayload(answers, result, attribution);
+    setLeadStatus("submitting");
+
+    try {
+      await submitLeadCapture(payload, captureConfig);
+      setSubmittedPayload(payload);
+      setLeadStatus("success");
+      trackFunnelEvent(
+        "lead_submitted",
+        {
+          submissionId: payload.submissionId,
+          company: payload.lead.company,
+          recommendation: payload.recommendation.title,
+          workflow: payload.diagnostic.workflow,
+        },
+        captureConfig.analyticsEndpoint,
+      );
+    } catch (error) {
+      setLeadStatus("error");
+      setSubmissionError(error instanceof Error ? error.message : "Lead capture failed. Try again in a moment.");
+    }
   }
 
   function goNext() {
@@ -107,14 +235,6 @@ function App() {
     <main className="page-shell">
       <section className="diagnostic-hero" aria-labelledby="diagnostic-title">
         <div className="diagnostic-workspace">
-          <div className="diagnostic-intro">
-            <p className="eyebrow">WebRTC.ventures AI Ops Map</p>
-            <h1 id="diagnostic-title">Map the first AI ops starter kit worth selling.</h1>
-            <p className="hero-lede">
-              Start with the diagnostic. One answer at a time, it turns a communication-heavy workflow into a scoped pilot signal for sales conversations, support operations, or regulated customer experience teams.
-            </p>
-          </div>
-
           <div className="diagnostic-card" aria-label="AI ops progressive diagnostic">
             <div className="diagnostic-head">
               <div>
@@ -144,6 +264,14 @@ function App() {
               </button>
             </div>
           </div>
+
+          <div className="diagnostic-intro">
+            <p className="eyebrow">WebRTC.ventures AI Ops Map</p>
+            <h1 id="diagnostic-title">Map the first AI ops starter kit worth selling.</h1>
+            <p className="hero-lede">
+              Start with the diagnostic. One answer at a time, it turns a communication-heavy workflow into a scoped pilot signal for sales conversations, support operations, or regulated customer experience teams.
+            </p>
+          </div>
         </div>
 
         <aside className="result-card" aria-label="live recommendation panel" aria-live="polite">
@@ -151,7 +279,17 @@ function App() {
           {!canShowEarlySignal ? (
             <LockedResult progress={progress} />
           ) : canShowFullResult ? (
-            <FullResult result={result} answers={answers} setAnswers={setAnswers} briefingUrl={briefingUrl} />
+            <FullResult
+              result={result}
+              answers={answers}
+              leadStatus={leadStatus}
+              leadErrors={leadErrors}
+              submissionError={submissionError}
+              schedulerUrl={scheduledUrl}
+              onLeadFieldChange={updateLeadField}
+              onSubmit={handleLeadSubmit}
+              onSchedulerOpen={markSchedulerOpened}
+            />
           ) : (
             <PartialResult result={result} progress={progress} />
           )}
@@ -170,13 +308,29 @@ function App() {
   );
 }
 
+function diagnosticEventAnswers(answers: Answers) {
+  return {
+    workflow: answers.workflow,
+    impact: answers.impact,
+    systems: answers.systems,
+    feasibility: answers.feasibility,
+    risk: answers.risk,
+    environment: answers.environment,
+  };
+}
+
 function ProgressMeter({ current, answers }: { current: number; answers: Answers }) {
   return (
     <ol className="progress-meter" aria-label="diagnostic progress">
       {questions.map((question, index) => {
         const answered = Boolean(answers[question.id]);
         return (
-          <li key={question.id} className={index === current ? "is-current" : answered ? "is-complete" : undefined}>
+          <li
+            key={question.id}
+            className={index === current ? "is-current" : answered ? "is-complete" : undefined}
+            aria-current={index === current ? "step" : undefined}
+            aria-label={`${question.eyebrow}: ${answered ? "answered" : index === current ? "current" : "not answered"}`}
+          >
             <span>{index + 1}</span>
           </li>
         );
@@ -194,7 +348,7 @@ function QuestionBlock<T extends string>({
   question: DiagnosticQuestion<T>;
   value: T | undefined;
   onSelect: (value: T) => void;
-  legendRef: React.RefObject<HTMLLegendElement>;
+  legendRef: RefObject<HTMLLegendElement>;
 }) {
   return (
     <fieldset className="question-block">
@@ -237,6 +391,7 @@ function PartialResult({ result, progress }: { result: ReturnType<typeof buildRe
     <div className="partial-result">
       <h2>{result.title}</h2>
       <ResultSection title="Early observation" body={result.whyFits} />
+      <ResultSection title="Early recommendation" body={result.recommendedWorkflow} />
       <div className="level-grid" aria-label="partial qualification levels">
         <LevelPill label="Impact" value={result.impactLevel} />
         <LevelPill label="Pilot readiness" value={readinessLabel(result.feasibilityLevel)} />
@@ -249,14 +404,26 @@ function PartialResult({ result, progress }: { result: ReturnType<typeof buildRe
 function FullResult({
   result,
   answers,
-  setAnswers,
-  briefingUrl,
+  leadStatus,
+  leadErrors,
+  submissionError,
+  schedulerUrl: scheduledUrl,
+  onLeadFieldChange,
+  onSubmit,
+  onSchedulerOpen,
 }: {
   result: ReturnType<typeof buildResult>;
   answers: Answers;
-  setAnswers: React.Dispatch<React.SetStateAction<Answers>>;
-  briefingUrl: string;
+  leadStatus: LeadStatus;
+  leadErrors: LeadValidationErrors;
+  submissionError: string;
+  schedulerUrl: string;
+  onLeadFieldChange: (field: "name" | "email" | "company" | "consent", value: string | boolean) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onSchedulerOpen: (trigger: "link" | "embed") => void;
 }) {
+  const canShowScheduler = leadStatus === "success" && Boolean(scheduledUrl);
+
   return (
     <div className="full-result">
       <h2>{result.title}</h2>
@@ -274,33 +441,108 @@ function FullResult({
       <ResultSection title="Pilot boundary" body={result.pilotBoundary} />
       <ResultSection title="Success metric" body={result.successMetric} />
 
-      <label className="email-capture">
-        <span>Work email for a quick expert follow-up</span>
-        <input
-          type="email"
-          value={answers.email}
-          onChange={(event) => setAnswers((current) => ({ ...current, email: event.target.value }))}
-          placeholder="name@company.com"
-          autoComplete="email"
-        />
-      </label>
+      <form className="lead-form" onSubmit={onSubmit} noValidate>
+        <div>
+          <p className="section-kicker">Lead capture</p>
+          <strong>Send the blueprint to WebRTC.ventures</strong>
+          <span>Structured answers, recommendation, attribution, referrer, and consent are sent before scheduling opens.</span>
+        </div>
 
-      <div className="cta-panel">
-        <strong>30-minute automation teardown</strong>
-        <span>
-          WebRTC.ventures can review the blueprint, pressure-test approval points, and turn the best sales signal into a starter-kit implementation plan.
-        </span>
-        <a href={briefingUrl} target="_blank" rel="noreferrer">
-          Contact WebRTC.ventures
-        </a>
-        {answers.email ? (
-          <div className="follow-up-contact">
-            <small>Follow-up contact noted</small>
-            <code>{answers.email.trim()}</code>
+        <label className="email-capture">
+          <span>Name</span>
+          <input
+            type="text"
+            value={answers.name}
+            onChange={(event) => onLeadFieldChange("name", event.target.value)}
+            placeholder="Alex Rivera"
+            autoComplete="name"
+            aria-invalid={Boolean(leadErrors.name)}
+            aria-describedby={leadErrors.name ? "lead-name-error" : undefined}
+          />
+          <FieldError id="lead-name-error" message={leadErrors.name} />
+        </label>
+
+        <label className="email-capture">
+          <span>Work email</span>
+          <input
+            type="email"
+            value={answers.email}
+            onChange={(event) => onLeadFieldChange("email", event.target.value)}
+            placeholder="name@company.com"
+            autoComplete="email"
+            aria-invalid={Boolean(leadErrors.email)}
+            aria-describedby={leadErrors.email ? "lead-email-error" : undefined}
+          />
+          <FieldError id="lead-email-error" message={leadErrors.email} />
+        </label>
+
+        <label className="email-capture">
+          <span>Company</span>
+          <input
+            type="text"
+            value={answers.company}
+            onChange={(event) => onLeadFieldChange("company", event.target.value)}
+            placeholder="Company name"
+            autoComplete="organization"
+            aria-invalid={Boolean(leadErrors.company)}
+            aria-describedby={leadErrors.company ? "lead-company-error" : undefined}
+          />
+          <FieldError id="lead-company-error" message={leadErrors.company} />
+        </label>
+
+        <label className="consent-row">
+          <input
+            type="checkbox"
+            checked={answers.consent}
+            onChange={(event) => onLeadFieldChange("consent", event.target.checked)}
+            aria-invalid={Boolean(leadErrors.consent)}
+            aria-describedby={leadErrors.consent ? "lead-consent-error" : undefined}
+          />
+          <span>{consentText}</span>
+        </label>
+        <FieldError id="lead-consent-error" message={leadErrors.consent} />
+
+        {submissionError ? <p className="form-message is-error" role="alert">{submissionError}</p> : null}
+        {leadStatus === "success" ? <p className="form-message is-success">Blueprint received. Pick a teardown time below.</p> : null}
+
+        <button className="primary-button submit-lead" type="submit" disabled={leadStatus === "submitting"}>
+          {leadStatus === "submitting" ? "Sending..." : "Submit and schedule"}
+        </button>
+      </form>
+
+      {canShowScheduler ? (
+        <div className="scheduler-panel">
+          <div>
+            <p className="section-kicker">Scheduler</p>
+            <strong>30-minute automation teardown</strong>
+            <span>Open the booking flow with the assessment context already attached.</span>
           </div>
-        ) : null}
-      </div>
+          <a href={scheduledUrl} target="_blank" rel="noreferrer" onClick={() => onSchedulerOpen("link")}>
+            Open scheduler
+          </a>
+          <iframe
+            title="Schedule a 30-minute AI ops teardown"
+            src={scheduledUrl}
+            loading="lazy"
+            onLoad={() => onSchedulerOpen("embed")}
+          />
+        </div>
+      ) : leadStatus === "success" ? (
+        <div className="scheduler-panel">
+          <p className="form-message is-error">Scheduler URL is not configured. The lead was captured, but booking cannot open yet.</p>
+        </div>
+      ) : null}
     </div>
+  );
+}
+
+function FieldError({ id, message }: { id: string; message?: string }) {
+  if (!message) return null;
+
+  return (
+    <span className="field-error" id={id}>
+      {message}
+    </span>
   );
 }
 

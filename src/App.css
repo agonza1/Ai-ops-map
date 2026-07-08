@@ -60,6 +60,8 @@
 .proof-band span,
 .result-section span,
 .result-section li,
+.lead-form > div > span,
+.scheduler-panel > div > span,
 .cta-panel span,
 .cta-panel small,
 .choice-card span,
@@ -230,6 +232,8 @@
 }
 
 .step-controls button,
+.submit-lead,
+.scheduler-panel a,
 .cta-panel a {
   display: inline-flex;
   align-items: center;
@@ -246,12 +250,15 @@
   cursor: pointer;
 }
 
-.step-controls button:disabled {
+.step-controls button:disabled,
+.submit-lead:disabled {
   cursor: not-allowed;
   opacity: 0.45;
 }
 
 .step-controls .primary-button,
+.submit-lead,
+.scheduler-panel a,
 .cta-panel a {
   border-color: #be452e;
   background: #be452e;
@@ -342,6 +349,90 @@
   background: rgba(255, 255, 255, 0.85);
 }
 
+
+.lead-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+  border-radius: 8px;
+  padding: 18px;
+  border: 1px solid rgba(31, 111, 118, 0.22);
+  background: #eef8f7;
+}
+
+.lead-form > div > strong,
+.scheduler-panel strong {
+  display: block;
+  color: var(--text);
+}
+
+.lead-form > div > span,
+.scheduler-panel > div > span {
+  display: block;
+  margin-top: 6px;
+}
+
+.consent-row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.consent-row input {
+  width: 18px;
+  height: 18px;
+  margin-top: 4px;
+  accent-color: #be452e;
+}
+
+.field-error,
+.form-message {
+  display: block;
+  line-height: 1.45;
+  font-size: 0.9rem;
+}
+
+.field-error,
+.form-message.is-error {
+  color: #98331d;
+}
+
+.form-message {
+  margin: 0;
+  font-weight: 800;
+}
+
+.form-message.is-success {
+  color: #1f6f76;
+}
+
+.submit-lead {
+  width: 100%;
+}
+
+.scheduler-panel {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  border-radius: 8px;
+  padding: 18px;
+  border: 1px solid rgba(190, 69, 46, 0.24);
+  background: #fff7ef;
+}
+
+.scheduler-panel a {
+  width: fit-content;
+}
+
+.scheduler-panel iframe {
+  width: 100%;
+  min-height: 520px;
+  border: 1px solid rgba(31, 111, 118, 0.18);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
 .cta-panel {
   border-radius: 8px;
   padding: 18px;
@@ -401,9 +492,22 @@
     min-height: 0;
   }
 
+  .diagnostic-workspace {
+    display: contents;
+  }
+
+  .diagnostic-card {
+    order: 1;
+  }
+
   .result-card {
+    order: 2;
     position: static;
     max-height: none;
+  }
+
+  .diagnostic-intro {
+    order: 3;
   }
 
   .diagnostic-intro h1 {
@@ -424,7 +528,7 @@
   }
 
   .diagnostic-intro h1 {
-    font-size: 2.7rem;
+    font-size: 2.2rem;
     max-width: none;
   }
 
@@ -435,6 +539,8 @@
 
   .progress-pill,
   .step-controls button,
+  .submit-lead,
+  .scheduler-panel a,
   .cta-panel a {
     width: 100%;
   }

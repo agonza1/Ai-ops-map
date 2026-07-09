@@ -106,43 +106,33 @@ function App() {
   return (
     <main className="page-shell">
       <section className="diagnostic-hero" aria-labelledby="diagnostic-title">
-        <div className="diagnostic-workspace">
-          <div className="diagnostic-intro">
-            <p className="eyebrow">WebRTC.ventures AI Ops Map</p>
-            <h1 id="diagnostic-title">Map the first AI ops starter kit worth selling.</h1>
-            <p className="hero-lede">
-              Start with the diagnostic. One answer at a time, it turns a communication-heavy workflow into a scoped pilot signal for sales conversations, support operations, or regulated customer experience teams.
-            </p>
+        <div className="diagnostic-card" aria-label="AI ops progressive diagnostic">
+          <div className="diagnostic-head">
+            <div>
+              <p className="section-kicker">Progressive diagnostic</p>
+              <span className="question-count">Step {step + 1} of {questions.length}</span>
+            </div>
+            <span className="progress-pill" aria-label={`${progress} of ${questions.length} diagnostic questions answered`}>
+              {progress}/{questions.length} mapped
+            </span>
           </div>
 
-          <div className="diagnostic-card" aria-label="AI ops progressive diagnostic">
-            <div className="diagnostic-head">
-              <div>
-                <p className="section-kicker">Progressive diagnostic</p>
-                <span className="question-count">Step {step + 1} of {questions.length}</span>
-              </div>
-              <span className="progress-pill" aria-label={`${progress} of ${questions.length} diagnostic questions answered`}>
-                {progress}/{questions.length} mapped
-              </span>
-            </div>
+          <ProgressMeter current={step} answers={answers} />
 
-            <ProgressMeter current={step} answers={answers} />
+          <QuestionBlock
+            question={currentQuestion}
+            value={answers[currentQuestion.id]}
+            onSelect={(value) => updateAnswer(currentQuestion.id, value)}
+            legendRef={legendRef}
+          />
 
-            <QuestionBlock
-              question={currentQuestion}
-              value={answers[currentQuestion.id]}
-              onSelect={(value) => updateAnswer(currentQuestion.id, value)}
-              legendRef={legendRef}
-            />
-
-            <div className="step-controls" aria-label="diagnostic navigation">
-              <button type="button" onClick={goPrevious} disabled={step === 0}>
-                Previous
-              </button>
-              <button type="button" className="primary-button" onClick={goNext} disabled={!isCurrentAnswered || step === questions.length - 1}>
-                Next
-              </button>
-            </div>
+          <div className="step-controls" aria-label="diagnostic navigation">
+            <button type="button" onClick={goPrevious} disabled={step === 0}>
+              Previous
+            </button>
+            <button type="button" className="primary-button" onClick={goNext} disabled={!isCurrentAnswered || step === questions.length - 1}>
+              Next
+            </button>
           </div>
         </div>
 
@@ -156,6 +146,14 @@ function App() {
             <PartialResult result={result} progress={progress} />
           )}
         </aside>
+
+        <div className="diagnostic-intro">
+          <p className="eyebrow">WebRTC.ventures AI Ops Map</p>
+          <h1 id="diagnostic-title">Map the first AI ops starter kit worth selling.</h1>
+          <p className="hero-lede">
+            One answer at a time, this turns a communication-heavy workflow into a scoped pilot signal for sales conversations, support operations, or regulated customer experience teams.
+          </p>
+        </div>
       </section>
 
       <section className="proof-band" aria-label="starter-kit packaging signals">

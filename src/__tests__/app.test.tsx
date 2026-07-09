@@ -14,6 +14,17 @@ describe("progressive diagnostic app shell", () => {
     expect(html).not.toContain("Delivery pod");
   });
 
+  it("orders the first question before supporting intro copy and the gated result", () => {
+    const html = renderToStaticMarkup(<App />);
+    const questionIndex = html.indexOf("Which workflow should create the first visible business signal?");
+    const gatedResultIndex = html.indexOf("Answer two questions to reveal the first useful signal.");
+    const introIndex = html.indexOf("Map the first AI ops starter kit worth selling.");
+
+    expect(questionIndex).toBeGreaterThanOrEqual(0);
+    expect(gatedResultIndex).toBeGreaterThan(questionIndex);
+    expect(introIndex).toBeGreaterThan(gatedResultIndex);
+  });
+
   it("renders diagnostic accessibility hooks in the initial shell", () => {
     const html = renderToStaticMarkup(<App />);
 

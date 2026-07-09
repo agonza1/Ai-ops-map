@@ -12,7 +12,10 @@ export type Answers = {
   feasibility?: FeasibilityId;
   risk?: ControlRiskId;
   environment?: EnvironmentId;
+  name: string;
   email: string;
+  company: string;
+  consent: boolean;
 };
 
 export type Level = "Low" | "Medium" | "High";

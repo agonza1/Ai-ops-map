@@ -21,6 +21,9 @@ describe("recommendation rules", () => {
       risk: "managed",
       environment: "cloud",
       email: "lead@example.com",
+      name: "Lead Buyer",
+      company: "Example Co",
+      consent: true,
     });
 
     expect(result.title).toBe("Sales conversation follow-up blueprint");
@@ -41,6 +44,9 @@ describe("recommendation rules", () => {
       risk: "low",
       environment: "hybrid",
       email: "",
+      name: "",
+      company: "",
+      consent: false,
     });
 
     expect(result.title).toBe("Controlled communications review blueprint");
@@ -53,7 +59,7 @@ describe("recommendation rules", () => {
   });
 
   it("tracks diagnostic progress without treating email as a scoring answer", () => {
-    expect(progressCount({ workflow: "support", email: "person@example.com" })).toBe(1);
+    expect(progressCount({ workflow: "support", email: "person@example.com", name: "Person", company: "Acme", consent: true })).toBe(1);
     expect(
       progressCount({
         workflow: "support",
@@ -63,6 +69,9 @@ describe("recommendation rules", () => {
         risk: "managed",
         environment: "private",
         email: "",
+      name: "",
+      company: "",
+      consent: false,
       }),
     ).toBe(6);
   });
@@ -76,6 +85,9 @@ describe("recommendation rules", () => {
       risk: "managed" as const,
       environment: "private" as const,
       email: "ops@example.com",
+      name: "Ops Lead",
+      company: "Ops Co",
+      consent: true,
     };
     const result = buildResult(answers);
     const url = new URL(buildBriefingUrl(answers, result));

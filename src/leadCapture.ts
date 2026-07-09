@@ -325,15 +325,20 @@ export function trackFunnelEvent(name: FunnelEventName, properties: Record<strin
   window.plausible?.(name, { props: event });
 
   if (analyticsEndpoint) {
+    const body = JSON.stringify(event);
+    const fallbackToBeacon = () => {
+      navigator.sendBeacon?.(analyticsEndpoint, new Blob([body], { type: "text/plain;charset=UTF-8" }));
+    };
+
     try {
-      const beaconSent = navigator.sendBeacon?.(analyticsEndpoint, new Blob([JSON.stringify(event)], { type: "application/json" })) ?? false;
-      if (!beaconSent) {
-        fetch(analyticsEndpoint, {
+      if (typeof fetch === "function") {
+        void fetch(analyticsEndpoint, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(event),
+          body: new Blob([body], { type: "text/plain;charset=UTF-8" }),
           keepalive: true,
-        });
+        }).catch(fallbackToBeacon);
+      } else {
+        fallbackToBeacon();
       }
     } catch {
       // Analytics should never interrupt the assessment flow.

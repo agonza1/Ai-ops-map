@@ -87,6 +87,27 @@ describe("funnel analytics helpers", () => {
     vi.unstubAllGlobals();
   });
 
+  it("posts configured endpoint analytics as a CORS-safe text payload", async () => {
+    const fetchMock = vi.fn<(input: string, init: RequestInit) => Promise<Response>>(() => Promise.resolve(new Response(null, { status: 204 })));
+    vi.stubGlobal("window", {});
+    vi.stubGlobal("navigator", { sendBeacon: vi.fn() });
+    vi.stubGlobal("fetch", fetchMock);
+
+    trackFunnelEvent("assessment_started", { step: "workflow" }, "http://127.0.0.1:5188/analytics");
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://127.0.0.1:5188/analytics",
+      expect.objectContaining({ method: "POST", keepalive: true }),
+    );
+    const init = fetchMock.mock.calls[0][1];
+    expect(init.headers).toBeUndefined();
+    expect(init.body).toBeInstanceOf(Blob);
+    expect((init.body as Blob).type).toBe("text/plain;charset=utf-8");
+    await expect((init.body as Blob).text()).resolves.toContain('"event":"assessment_started"');
+
+    vi.unstubAllGlobals();
+  });
+
   it("recognizes scheduler booking postMessage events", () => {
     expect(isMeetingBookedMessage({ data: { event: "calendly.event_scheduled" } } as MessageEvent)).toBe(true);
     expect(isMeetingBookedMessage({ data: "MEETING_BOOKED" } as MessageEvent)).toBe(true);

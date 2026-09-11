@@ -27,6 +27,17 @@ npm test
 npm run build
 ```
 
+To check the repository's documented static-site contract on a clean checkout,
+run the dependency-free smoke test (no package installation required):
+
+```bash
+npm run test:smoke
+```
+
+The check keeps the private `ai-ops-map` ESM package identity and confirms that
+the source and committed Pages entry points (`index.html` and `docs/index.html`)
+are present.
+
 ## GitHub Pages deployment
 
 This repository is configured to publish the committed `docs/` directory with GitHub Pages.

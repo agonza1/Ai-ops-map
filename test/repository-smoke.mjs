@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile, stat } from "node:fs/promises";
+import { URL } from "node:url";
 import test from "node:test";
 
 const repositoryRoot = new URL("../", import.meta.url);

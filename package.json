@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:smoke": "node --test test/repository-smoke.test.js"
+    "test:smoke": "node --test test/repository-smoke.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

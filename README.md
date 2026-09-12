@@ -22,10 +22,10 @@ npm run dev
 ## Test and build
 
 ```bash
-npm run lint
-npm test
-npm run build
+npm run check
 ```
+
+This runs linting (`npm run lint`), the test suite (`npm test`), and the production build (`npm run build`) in sequence.
 
 ## GitHub Pages deployment
 
